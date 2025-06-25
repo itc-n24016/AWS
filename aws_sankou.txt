@@ -1,0 +1,185 @@
+# AWS ネットワーク＆サーバー構築
+
+## 設計
+
+### VPCを設計せよ
+
+- VPC name:kari_vpc
+- VPC network:100.0.0.0/16
+
+### Public Subnet 及び Private Subnetを設計せよ
+
+#### Public subnet
+
+- Public Subnet name:kari_public_subnet
+- Public Subnet network:100.0.1.0/24
+
+internetgateway設定
+- intervetgateway name: kari_internetgateway
+VPCにアタッチする
+#### Private subnet
+
+- Public Subnet name:kari_private_subnet
+- Public Subnet network:100.0.2.0/24
+
+### PublicSubnet及びPrivateSubnetのroute tableを設計せよ
+
+- PublicSubnet　route table name: kari_publicsubnet_root
+関連付けをパブリック同士でやる
+ルートの中に0.0.0.0/0 で internetgatewayを追加する
+- PrivateSubnet　route table
+default VPCがつながっているもの　nat を接続
+
+
+### 踏み台サーバ，Webサーバ，DBサーバに適切なIPアドレスを割り振れ
+
+
+#### 踏み台サーバ
+有効化
+SG　sshのみ0.0.0.0/0
+- 踏み台サーバ subnet:パブリック
+- 踏み台サーバ Name:仮_踏み台サーバー
+- 踏み台サーバ IP:100.0.1.15
+
+#### Webサーバ
+有効化
+SG　ssh(踏み台)0.0.0.0/0,http0.0.0.0/0
+- Webサーバ subnet:パブリック
+- Webサーバ Name:仮_WEBserver
+- Webサーバ IP:100.0.1.16
+
+VPCのDNSを有効化にする
+#### DBサーバ
+
+- DBサーバ subnet:プライベート
+- DBサーバ Name:仮_DB_server
+- DBサーバ IP:100.0.2.14
+
+### 踏み台サーバ，Webサーバ，DBサーバに適切なSecurityGroupを設計せよ
+
+#### 踏み台サーバSG
+
+開放するサービス(port),開放するネットワーク
+ssh 0.0.0.0/0
+ICMP 0.0.0.0/0
+
+#### WebサーバSG
+
+開放するサービス(port),開放するネットワーク
+ssh 100.0.1.15/32
+http 0.0.0.0/0
+
+#### DBサーバSG
+
+開放するサービス(port),開放するネットワーク
+ssh 100.0.1.15/32
+mysql 100.0.1.16/32
+ICMP 100.0.2.14/32
+
+
+踏み台　-> WEBサーバー 
+       -> DBサーバー
+## 設計が終了したら，設計に基づいて作成せよ
+
+
+mysql
+DBサーバーでmysqlのデータを作成
+WEBサーバーからパスワードで実行
+
+# NATに接続
+
+ルートテーブルのVPCが接続されている　defaultにNATゲートウェイを接続する
+
+-DB
+curl http://www.kantei.go.jp
+htmlの構築がでてこればOK
+
+MYSQLの構築 wordpressのダウンロード
+- DB
+sudo dnf -y install mariadb105-server
+sudo systemctl start mariadb
+sudo mysql_secure_installation
+1.2.3.6.7.8.9 [enter]
+4.5パスワード
+
+mysql -u root -p
+4.5のパスワード
+CREATE DATABASE wordpress DEFAULT CGARACTER SET utf8 COLLATE utf8_general_ci;
+
+grant all on wordpress.* to wordpress@"%" identified by 'wordpresspasswd';
+
+flush privileges;
+select user,  host from mysql.user;
+
+exit;
+
+sudo systemctl enable mariadb
+
+- WEBserver
+sudo dnf -y indtall php8.1-mbstring php-mysqli
+
+sudo dnf -y install mariadb105-server
+
+mysql -h DBサーバーIP -u ユーザー名（作成） -p
+
+作成したパスワード入力
+
+cd ~
+
+wget https://ja.wordpress.org/latest-ja.tar.gz
+
+tar xzvf latest-ja.tar.gz
+
+cd wordpress
+
+sudo cp -r * /var/www/html
+
+sudo chown apache:apache /var/www/html -R
+
+sudo systemctl start httpd
+
+起動できない場合
+sudo systemctl restart httpd
+
+WEB--
+
+パブリックDNS/wp-admin/
+
+データベース名
+ユーザー名
+パスワード
+
+ユーザー名：admin
+パスワード自分で
+メールアドレス：aws@exsample.co.jp
+
+
+RDS作成
+admin
+u#sw54*sd
+
+RDS
+DBインスタンス名：sub-RDS
+ユーザー名：admin
+パスワード：u#sw54*sd
+VPC：sub_VPC
+パブリックアクセス：なし
+セキュリティグループ：新規作成
+データベース名：sub_RDS
+
+
+
+10.0.0.0/24
+10.0.0.0  10.0.0.255　　２５６
+
+2
+10.0.0.0/25 2¹　
+10.0.0.128/25
+４
+10.0.0.0/26 2² パブリックサブネット
+10.0.0.64/26   プライベートサブネット
+10.0.0.0  10.0.0.63
+10.0.0.64 10.0.0.127
+8
+10.0.0.0/27  2³パブリックサブネット
+10.0.0.32/27   プライベートサブネット
