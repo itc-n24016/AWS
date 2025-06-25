@@ -154,16 +154,6 @@ WEB--
 メールアドレス：aws@exsample.co.jp
 
 
-RDS作成
-admin
-u#sw54*sd
-
-RDS
-DBインスタンス名：sub-RDS
-ユーザー名：admin
-パスワード：u#sw54*sd
-VPC：sub_VPC
-パブリックアクセス：なし
 セキュリティグループ：新規作成
 データベース名：sub_RDS
 
